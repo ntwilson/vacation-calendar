@@ -103,15 +103,14 @@ let upstream =
 
   with node-readline-aff =
       { dependencies =
-          [ "exceptions"
+          [ "aff"
           , "console"
+          , "effect"
           , "either"
-          , "node-streams"
-          , "aff"
-          , "prelude"
-          , "options"
-          , "psci-support"
           , "node-readline"
+          , "prelude"
+          , "psci-support"
+          , "strings"
           ]
       , repo =
           "https://github.com/ntwilson/purescript-node-readline-aff"

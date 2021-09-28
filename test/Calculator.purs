@@ -12,9 +12,9 @@ spec :: Spec Unit
 spec = describe "Calculator" do
   describe "vacationAccrued" do 
     it "calculates correctly" do
-      vacationAccrued sept2021 sept2021 `shouldEqual` Hours  0.0
-      vacationAccrued sept2021  dec2021 `shouldEqual` Hours 38.0
-      vacationAccrued sept2021  mar2022 `shouldEqual` Hours 84.0
+      vacationAccrued sept2021 sept2021 `shouldEqual` {vacationHours: Hours  0.0, discretionaryHours: Hours 0.0}
+      vacationAccrued sept2021  dec2021 `shouldEqual` {vacationHours: Hours 38.0, discretionaryHours: Hours 0.0}
+      vacationAccrued sept2021  mar2022 `shouldEqual` {vacationHours: Hours 84.0, discretionaryHours: Hours 0.0}
 
   where 
   sept2021 = MonthDate { year: clampEnum 2021, month: September }

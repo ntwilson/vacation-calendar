@@ -2,7 +2,6 @@ module Vacate.Test.MonthDate where
 
 import Vacate.Prelude
 
-import Data.Enum (enumFromTo)
 import MonthDate (MonthDate(..), diff)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)

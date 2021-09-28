@@ -15,11 +15,13 @@ to generate this file without the comments in this block.
   [ "aff"
   , "arrays"
   , "console"
+  , "control"
   , "datetime"
   , "effect"
   , "either"
   , "enums"
   , "foldable-traversable"
+  , "formatters"
   , "integers"
   , "interpolate"
   , "maybe"
@@ -27,11 +29,14 @@ to generate this file without the comments in this block.
   , "node-readline-aff"
   , "now"
   , "numbers"
+  , "parsing"
   , "prelude"
   , "psci-support"
   , "spec"
   , "spec-discovery"
   , "strings"
+  , "tailrec"
+  , "transformers"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -2,10 +2,12 @@ module MonthDate where
 
 import Vacate.Prelude
 
-import Data.Enum (class BoundedEnum, Cardinality(..), cardinality)
+import Data.Enum (Cardinality(..), cardinality)
 import Data.Generic.Rep (class Generic)
-import Data.Newtype (class Newtype)
 import Data.Show.Generic (genericShow)
+
+class PrettyPrint a where
+  prettyPrint :: a -> String
 
 newtype MonthDate = MonthDate { year :: Year, month :: Month }
 derive newtype instance Eq MonthDate
@@ -42,6 +44,9 @@ instance BoundedEnum MonthDate where
     year <- toEnum (i / 12)
     month <- toEnum (i `mod` 12)
     pure $ MonthDate { year, month }
+
+instance PrettyPrint MonthDate where
+  prettyPrint (MonthDate { year, month }) = i(show month)" "(show $ fromEnum year)
 
 onTheFirst :: MonthDate -> Date
 onTheFirst (MonthDate { year, month }) = canonicalDate year month $ clampEnum 1
