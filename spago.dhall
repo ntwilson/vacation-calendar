@@ -24,11 +24,13 @@ to generate this file without the comments in this block.
   , "formatters"
   , "integers"
   , "interpolate"
+  , "lazy"
   , "maybe"
   , "newtype"
   , "node-readline-aff"
   , "now"
   , "numbers"
+  , "ordered-collections"
   , "parsing"
   , "prelude"
   , "psci-support"
@@ -37,6 +39,7 @@ to generate this file without the comments in this block.
   , "strings"
   , "tailrec"
   , "transformers"
+  , "tuples"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
