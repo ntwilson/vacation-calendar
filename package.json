@@ -21,5 +21,10 @@
   "bugs": {
     "url": "https://github.com/ntwilson/vacation-calendar/issues"
   },
-  "homepage": "https://github.com/ntwilson/vacation-calendar#readme"
+  "homepage": "https://github.com/ntwilson/vacation-calendar#readme",
+  "devDependencies": {
+    "purescript": "^0.14.4",
+    "purescript-psa": "^0.8.2",
+    "spago": "^0.20.3"
+  }
 }
