@@ -27,23 +27,23 @@ import Text.Parsing.Parser.String (skipSpaces, string)
 import Text.Parsing.Parser.Token (alphaNum)
 import Vacate.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
 
-type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate } 
+type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate }
 
 parseInput :: String -> String -> String -> Either String UserInput
 parseInput vacation discretionary date = do
-  vacationSoFar <- Number.fromString vacation # note (i"Unable to parse '"vacation"' as a number")
-  discretionarySoFar <- Number.fromString discretionary # note (i"Unable to parse '"discretionary"' as a number")
+  vacationSoFar <- Number.fromString vacation # note (i "Unable to parse '" vacation "' as a number")
+  discretionarySoFar <- Number.fromString discretionary # note (i "Unable to parse '" discretionary "' as a number")
 
-  case String.split (Pattern " ") date of 
+  case String.split (Pattern " ") date of
     [ monthStr, yearStr ] -> do
-      month <- parseMonth monthStr # note (i"Unable to recognize '"monthStr"' as a month")
-      yearInt <- Int.fromString yearStr # note (i"Unable to parse '"yearStr"' as a number") 
-      year <- toEnum yearInt # note (i"Year '"yearStr"' is outside the bounds of known years")
+      month <- parseMonth monthStr # note (i "Unable to recognize '" monthStr "' as a month")
+      yearInt <- Int.fromString yearStr # note (i "Unable to parse '" yearStr "' as a number")
+      year <- toEnum yearInt # note (i "Year '" yearStr "' is outside the bounds of known years")
       pure $ { vacationSoFar, discretionarySoFar, dateInTheFuture: MonthDate { month, year } }
-    _ -> Left $ i"Expecting 'Month Year', e.g., 'January 2025', but got '"date"'"
+    _ -> Left $ i "Expecting 'Month Year', e.g., 'January 2025', but got '" date "'"
 
 parseMonth :: String -> Maybe Month
-parseMonth monthStr = case String.toLower monthStr of 
+parseMonth monthStr = case String.toLower monthStr of
   "january" -> Just January
   "february" -> Just February
   "march" -> Just March
@@ -76,24 +76,24 @@ parseMonth monthStr = case String.toLower monthStr of
 printStats :: ∀ m. MonadEffect m => UserInput -> Array Vacation -> m Unit
 printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
   today <- liftEffect nowDate
-  let 
+  let
     thisMonth = MonthDate.fromDate today
     thisMonthStats = { vacationHours: Hours vacationSoFar, discretionaryHours: Hours discretionarySoFar }
     allStats = vacationStatsByMonth vacations thisMonthStats thisMonth dateInTheFuture
 
-  for_ (Map.toUnfoldable allStats :: Array _) \(monthDate@(MonthDate {month}) /\ vacation) -> do 
+  for_ (Map.toUnfoldable allStats :: Array _) \(monthDate@(MonthDate { month }) /\ vacation) -> do
     let
       vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
-      msg = i
-        (prettyPrint monthDate)": "(un Hours vacation.vacationHours)" hours of vacation; "
-        (un Hours vacation.discretionaryHours)" discretionary hours"
-        (if holidaysThisMonth month > 0 then i"; ("(holidaysThisMonth month)" holidays)" else "")
-        (if vacationTaken > 0.0 then i"   *** "vacationTaken" hours vacation taken" else "")
-        "."
+      msg =
+        i (prettyPrint monthDate) ": " (un Hours vacation.vacationHours) " hours of vacation; "
+          <> i (un Hours vacation.discretionaryHours) " discretionary hours"
+          <> (if holidaysThisMonth month > 0 then i "; (" (holidaysThisMonth month) " holidays)" else "")
+          <> (if vacationTaken > 0.0 then i "   *** " vacationTaken " hours vacation taken" else "")
+          <> "."
     log msg
-  
+
 parseVacationTime :: ∀ m. MonadError String m => String -> m Vacation
-parseVacationTime inputStr = liftError $ runParser inputStr do 
+parseVacationTime inputStr = liftError $ runParser inputStr do
   nHours <- Hours <$> (parseNumber <* skipSpaces)
   try (string "hours" <|> string "hrs" <|> string "") *> skipSpaces
   try (string "in" <|> string "") *> skipSpaces
@@ -111,12 +111,12 @@ parseVacationTime inputStr = liftError $ runParser inputStr do
   parseMonth' :: Parser String Month
   parseMonth' = do
     monthStr <- parseWord
-    parseMaybeWith (defer \_ -> i"Can't parse '"monthStr"' as a month") parseMonth monthStr
+    parseMaybeWith (defer \_ -> i "Can't parse '" monthStr "' as a month") parseMonth monthStr
 
   parseYear :: Parser String Year
   parseYear = do
     yearInt <- parseInteger
-    parseMaybeWith (defer \_ -> i yearInt" is out of range of valid years") toEnum yearInt
+    parseMaybeWith (defer \_ -> i yearInt " is out of range of valid years") toEnum yearInt
 
   parseWord :: Parser String String
   parseWord = do
@@ -124,14 +124,13 @@ parseVacationTime inputStr = liftError $ runParser inputStr do
     pure $ String.fromCodePointArray $ (String.codePointFromChar <$> chars)
 
   parseMaybeWith :: ∀ stream a b. Lazy String -> (a -> Maybe b) -> a -> Parser stream b
-  parseMaybeWith msg tryParse x = 
-    case tryParse x of 
-      Nothing -> fail $ force msg 
+  parseMaybeWith msg tryParse x =
+    case tryParse x of
+      Nothing -> fail $ force msg
       Just parsed -> pure parsed
 
   liftError (Left err) = throwError $ parseErrorMessage err
   liftError (Right err) = pure err
-
 
 getVacationTime :: ∀ m. MonadAff m => Interface -> ExceptT String m Vacation
 getVacationTime interface = do
@@ -141,19 +140,19 @@ getVacationTime interface = do
 
 applyAnyVacations :: UserInput -> Interface -> Aff Unit
 applyAnyVacations userInput interface = evalStateT (forever go) []
-  where 
+  where
   go :: StateT (Array { nHours :: Hours, month :: MonthDate }) Aff Unit
-  go = do 
+  go = do
     currentVacations <- get
     parseResults <- runExceptT (getVacationTime interface)
-    case parseResults of 
+    case parseResults of
       Left err -> log err
-      Right vacation -> do 
-        let newVacations = currentVacations <> [vacation] 
+      Right vacation -> do
+        let newVacations = currentVacations <> [ vacation ]
         put newVacations
         printStats userInput newVacations
 
-getInput :: Interface -> Aff UserInput 
+getInput :: Interface -> Aff UserInput
 getInput interface = do
   log "How many vacation hours do you have left right now?"
   vacation <- RL.prompt interface
@@ -163,8 +162,8 @@ getInput interface = do
   log "How far into the future are you trying to plan? (Month/Year e.g., January 2025)"
   date <- RL.prompt interface
 
-  case parseInput vacation discretionary date of 
-    Right input -> pure input 
+  case parseInput vacation discretionary date of
+    Right input -> pure input
     Left err -> do
       log err
       getInput interface

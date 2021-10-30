@@ -19,6 +19,6 @@ import Effect.Aff.Class (class MonadAff) as Exports
 import Effect.Class (class MonadEffect, liftEffect) as Exports
 import Effect.Class.Console (log) as Exports
 
-clampEnum :: ∀ a. Exports.BoundedEnum a => Int -> a 
+clampEnum :: ∀ a. Exports.BoundedEnum a => Int -> a
 clampEnum = Exports.toEnumWithDefaults bottom top
 
