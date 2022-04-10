@@ -85,10 +85,10 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
     let
       vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
       msg =
-        i (prettyPrint monthDate) ": " (un Hours vacation.vacationHours) " hours of vacation; "
-          <> i (un Hours vacation.discretionaryHours) " discretionary hours"
-          <> (if holidaysThisMonth month > 0 then i "; (" (holidaysThisMonth month) " holidays)" else "")
-          <> (if vacationTaken > 0.0 then i "   *** " vacationTaken " hours vacation taken" else "")
+        i (prettyPrint monthDate)": "(un Hours vacation.vacationHours)" hours of vacation; "
+          <> i (un Hours vacation.discretionaryHours)" discretionary hours"
+          <> (if holidaysThisMonth month > 0 then i "; ("(holidaysThisMonth month)" holidays)" else "")
+          <> (if vacationTaken > 0.0 then i "   *** "vacationTaken" hours vacation taken" else "")
           <> "."
     log msg
 
@@ -111,17 +111,17 @@ parseVacationTime inputStr = liftError $ runParser inputStr do
   parseMonth' :: Parser String Month
   parseMonth' = do
     monthStr <- parseWord
-    parseMaybeWith (defer \_ -> i "Can't parse '" monthStr "' as a month") parseMonth monthStr
+    parseMaybeWith (defer \_ -> i "Can't parse '"monthStr"' as a month") parseMonth monthStr
 
   parseYear :: Parser String Year
   parseYear = do
     yearInt <- parseInteger
-    parseMaybeWith (defer \_ -> i yearInt " is out of range of valid years") toEnum yearInt
+    parseMaybeWith (defer \_ -> i yearInt" is out of range of valid years") toEnum yearInt
 
   parseWord :: Parser String String
   parseWord = do
     chars <- many alphaNum
-    pure $ String.fromCodePointArray $ (String.codePointFromChar <$> chars)
+    pure $ String.fromCodePointArray $ map String.codePointFromChar $ chars
 
   parseMaybeWith :: ∀ stream a b. Lazy String -> (a -> Maybe b) -> a -> Parser stream b
   parseMaybeWith msg tryParse x =
