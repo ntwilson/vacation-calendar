@@ -1,6 +1,6 @@
 module Vacate.Backend.ServerSetup where
 
-import Vacate.Prelude
+import Vacate.Backend.Prelude
 
 import Data.Int as Int
 import Dotenv (loadFile)

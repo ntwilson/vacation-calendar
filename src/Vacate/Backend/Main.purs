@@ -1,6 +1,6 @@
 module Vacate.Backend.Main where
 
-import Vacate.Prelude
+import Vacate.Backend.Prelude
 
 import HTTPure as HTTPure
 import Vacate.Backend.Routing (router)

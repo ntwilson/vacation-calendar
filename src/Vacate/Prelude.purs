@@ -1,11 +1,7 @@
 module Vacate.Prelude (module Prelude, module Exports, clampEnum) where
 
-import Prelude
+import Prelude hiding (div)
 
-import Concur.Core (Widget) as Exports
-import Concur.React (HTML) as Exports
-import Concur.React.DOM (text) as Exports
-import Concur.React.Run (runWidgetInDom) as Exports
 import Control.Alt ((<|>)) as Exports
 import Data.Date (Date, Month(..), Year, canonicalDate, month, year) as Exports
 import Data.Either (Either(..), note) as Exports
@@ -23,7 +19,6 @@ import Effect.Aff (Aff, launchAff_) as Exports
 import Effect.Aff.Class (class MonadAff, liftAff) as Exports
 import Effect.Class (class MonadEffect, liftEffect) as Exports
 import Effect.Class.Console (log) as Exports
-import Node.Process (lookupEnv) as Exports
 
 clampEnum :: ∀ a. Exports.BoundedEnum a => Int -> a
 clampEnum = Exports.toEnumWithDefaults bottom top

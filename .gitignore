@@ -11,6 +11,7 @@ node_modules
 .purs-repl
 output
 dist/*.js
+release/
 
 # ide
 .vscode

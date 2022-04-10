@@ -1,6 +1,6 @@
 module Vacate.Backend.Routing where
 
-import Vacate.Prelude
+import Vacate.Backend.Prelude
 
 import Control.Monad.Error.Class (catchError)
 import HTTPure (Method(..))
