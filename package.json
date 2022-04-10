@@ -7,13 +7,13 @@
     "test": "test"
   },
   "scripts": {
-    "start": "spago run --main Vacate.Backend.Main --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
+    "start": "node ./release/index.js",
     "ps": "spago build --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "ps-ide": "spago build --purs-args \"-o .ide_modules/ --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "watch-ps": "spago build --watch --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "test": "spago test --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "clean": "rm -r output/Vacate*",
-    "build": "npm run ps && webpack && spago bundle-app -t release/index.js",
+    "build": "npm run ps && webpack && spago bundle-app -m Vacate.Backend.Main -t release/index.js",
     "watch": "npm run ps && webpack -w",
     "format": "purs-tidy format-in-place src/",
     "start-db-server": "sudo service postgresql start"
