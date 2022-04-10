@@ -1,4 +1,4 @@
-module MonthDate where
+module Vacate.Shared.MonthDate where
 
 import Vacate.Prelude
 

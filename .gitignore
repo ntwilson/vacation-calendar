@@ -10,7 +10,11 @@ node_modules
 .psc-ide-port
 .purs-repl
 output
+dist/*.js
 
-#ide
+# ide
 .vscode
 .ide_modules
+
+# Secrets
+**/*.env

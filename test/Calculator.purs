@@ -3,10 +3,10 @@ module Vacate.Test.Calculator where
 import Vacate.Prelude
 
 import Data.Map as Map
-import MonthDate (MonthDate(..))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Vacate.Calculator (vacationStatsByMonth)
+import Vacate.Shared.Calculator (vacationStatsByMonth)
+import Vacate.Shared.MonthDate (MonthDate(..))
 
 spec :: Spec Unit
 spec = describe "Calculator" do

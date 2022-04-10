@@ -2,16 +2,20 @@
   "name": "vacation-calendar",
   "version": "1.0.0",
   "description": "Track vacation days as they accrue and are spent",
-  "main": "output/Main/index.js",
+  "main": "output/Vacate.Backend.Main/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "start": "spago run --purs-args \"--stash --censor-lib\"",
+    "start": "spago run --main Vacate.Backend.Main --purs-args \"--stash --censor-lib\"",
     "ps": "spago build --purs-args \"--stash --censor-lib\"",
-    "ps-ide": "spago build --purs-args \"-o .ide_modules/\"",
+    "ps-ide": "spago build --purs-args \"-o .ide_modules/ --censor-lib\"",
+    "clean": "rm -r output/Vacate*",
+    "build": "npm run ps && webpack && spago bundle-app -t release/index.js",
+    "watch": "npm run ps && webpack -w",
     "format": "purs-tidy format-in-place src/",
-    "test": "spago test --purs-args \"--stash --censor-lib\""
+    "test": "spago test --purs-args \"--stash --censor-lib\"",
+    "start-db-server": "sudo service postgresql start"
   },
   "repository": {
     "type": "git",
@@ -26,9 +30,17 @@
   "devDependencies": {
     "purescript": "^0.14.4",
     "purescript-psa": "^0.8.2",
-    "spago": "^0.20.3"
+    "purs-tidy": "^0.6.2",
+    "spago": "^0.20.3",
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0",
+    "webpack-merge": "^5.7.3"
   },
   "dependencies": {
-    "purs-tidy": "^0.6.2"
+    "pg": "^8.5.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "url": "^0.11.0",
+    "xhr2": "^0.2.1"
   }
 }

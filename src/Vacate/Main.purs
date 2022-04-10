@@ -1,8 +1,7 @@
-module Main where
+module Vacate.Main where
 
 import Vacate.Prelude
 
-import Control.Alt ((<|>))
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.Except (class MonadError, ExceptT, runExceptT)
 import Control.Monad.Rec.Class (forever)
@@ -17,15 +16,15 @@ import Data.Number as Number
 import Data.String (Pattern(..))
 import Data.String as String
 import Effect.Now (nowDate)
-import MonthDate (MonthDate(..), prettyPrint)
-import MonthDate as MonthDate
 import Node.ReadLine.Aff (Interface)
 import Node.ReadLine.Aff as RL
 import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.String (skipSpaces, string)
 import Text.Parsing.Parser.Token (alphaNum)
-import Vacate.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
+import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
+import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
+import Vacate.Shared.MonthDate as MonthDate
 
 type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate }
 

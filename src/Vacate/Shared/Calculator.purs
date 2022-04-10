@@ -1,4 +1,4 @@
-module Vacate.Calculator where
+module Vacate.Shared.Calculator where
 
 import Vacate.Prelude
 
@@ -6,7 +6,7 @@ import Data.Array as Array
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Newtype (over2)
-import MonthDate (MonthDate)
+import Vacate.Shared.MonthDate (MonthDate)
 
 type Vacation = { nHours :: Hours, month :: MonthDate }
 type VacationStats = { vacationHours :: Hours, discretionaryHours :: Hours }

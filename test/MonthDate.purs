@@ -2,9 +2,9 @@ module Vacate.Test.MonthDate where
 
 import Vacate.Prelude
 
-import MonthDate (MonthDate(..), diff)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
+import Vacate.Shared.MonthDate (MonthDate(..), diff)
 
 spec :: Spec Unit
 spec = describe "MonthDate" do
