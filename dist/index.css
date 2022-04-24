@@ -3,7 +3,11 @@ html {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-button { 
+.top-slider {
+  max-width: 80vw;
+}
+
+button {
   font-size: large;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   border: none;
@@ -32,6 +36,7 @@ input[type="checkbox"] {
 input[type="text"] {
   padding: 0.3em 0.5em;
   font-size: large;
+  line-height: 1.5;
 }
 
 .nav-bar { 

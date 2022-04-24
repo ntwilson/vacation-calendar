@@ -2,36 +2,42 @@ module Vacate.Frontend.Main where
 
 import Vacate.Frontend.Prelude
 
-import Concur.React.DOM (button, div)
+import Concur.React.DOM as DOM
+import Concur.React.Props (ReactProps, unsafeTargetValue)
 import Concur.React.Props as Props
-import Concur.React.Widgets (textInputWithButton)
 import Control.Monad.Except (class MonadError, ExceptT, runExceptT, throwError)
 import Control.Monad.Rec.Class (forever)
-import Control.Monad.State (StateT, evalStateT, get, put)
+import Control.Monad.State (evalStateT, get, put)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (many)
 import Data.Array as Array
 import Data.Formatter.Parser.Number (parseInteger, parseNumber)
 import Data.Int as Int
 import Data.Map as Map
-import Data.Number as Number
 import Data.String (Pattern(..))
 import Data.String as String
 import Effect.Now (nowDate)
+import Option as Option
+import React.Basic.DOM (css)
+import React.Ref as Ref
+import React.SyntheticEvent (SyntheticMouseEvent)
 import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.String (skipSpaces, string)
 import Text.Parsing.Parser.Token (alphaNum)
+import Unsafe.Coerce (unsafeCoerce)
+import Vacate.Frontend.MUI (ValueLabelDisplay(..))
+import Vacate.Frontend.MUI as MUI
 import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
 import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
 import Vacate.Shared.MonthDate as MonthDate
 
 type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate }
 
-parseInput :: String -> String -> String -> Either String UserInput
+parseInput :: Int -> Int -> String -> Either String UserInput
 parseInput vacation discretionary date = do
-  vacationSoFar <- Number.fromString vacation # note (i "Unable to parse '"vacation"' as a number")
-  discretionarySoFar <- Number.fromString discretionary # note (i "Unable to parse '"discretionary"' as a number")
+  let vacationSoFar = Int.toNumber vacation
+  let discretionarySoFar = Int.toNumber discretionary
 
   case String.split (Pattern " ") date of
     [ monthStr, yearStr ] -> do
@@ -73,28 +79,64 @@ parseMonth monthStr = case String.toLower monthStr of
 
   _ -> Nothing
 
+
+textInputWithButton :: ∀ a.
+  String ->
+  String ->
+  (∀ b. Array (ReactProps b)) ->
+  MUI.ButtonProps a ->
+  Widget HTML String
+textInputWithButton val buttonlabel inpProps buttonProps = do
+  ref <- liftEffect Ref.createNodeRef
+  DOM.div'
+    [ DOM.input $ inpProps <>
+      [ Props.unsafeTargetValue <$> Props.onKeyEnter
+      , Props.defaultValue val
+      , Props.ref (Ref.fromRef ref)
+      ]
+    , DOM.text " "
+    , do
+      _ <- MUI.button (Option.alter {onClick: \(_::Maybe (SyntheticMouseEvent -> a)) -> Just identity} buttonProps) [DOM.text buttonlabel]
+      mInput <- liftEffect (Ref.getCurrentRef ref)
+      case mInput of
+        Nothing -> pure val
+        Just inp -> pure (unsafeCoerce inp).value
+    ]
+
+
 getInput :: Widget HTML UserInput
 getInput = do
-  vacation <- 
-    ( text "How many vacation hours do you have left right now?"
-    <|> textInputWithButton "" "Enter" [Props._id "vacation-button"] []
-    )
+  {vacation, discretionary, date} <- selectVacationTimes
 
-  discretionary <-
-    ( text "How many discretionary hours do you have left right now?"
-    <|> textInputWithButton "" "Enter" [Props._id "discretionar-button"] []
-    )
-
-  date <- 
-    ( text "How far into the future are you trying to plan? (Month/Year e.g., January 2025)"
-    <|> textInputWithButton "" "Enter" [Props._id "future-button"] []
-    )
 
   case parseInput vacation discretionary date of
     Right input -> pure input
     Left err -> do
-      _ <- (text err <|> button [] [])
+      _ <- (DOM.text err <|> DOM.button [] [])
       getInput
+
+  where
+
+  selectVacationTimes :: Widget HTML { vacation :: Int, discretionary :: Int, date :: String }
+  selectVacationTimes = go { vacation: 0, discretionary: 0, date: "" }
+    where 
+    go {vacation, discretionary, date} = do
+      input <- 
+        (   DOM.text "How many vacation hours do you have left right now?"
+        <|> slider (Just <<< {vacation: _, discretionary, date})
+        <|> DOM.text "How many discretionary hours do you have left right now?"
+        <|> slider (Just <<< {vacation, discretionary: _, date})
+        <|> DOM.text "How far into the future are you trying to plan? (Month/Year e.g., January 2025)"
+        <|> DOM.input [Props._type "text", Props.onChange <#> unsafeTargetValue <#> {vacation, discretionary, date: _} <#> Just]
+        <|> MUI.button (Option.fromRecord {onClick: const Nothing, style: css {display: "flex"}}) [DOM.text "Enter"]
+        )
+
+      input # caseMaybe { just: go, nothing: pure {vacation, discretionary, date} }
+
+    slider onChangeCommitted = 
+      DOM.div [Props.className "top-slider"] [MUI.slider (Option.fromRecord {onChangeCommitted, valueLabelDisplay: Auto})]
+
+
 
 printStats :: ∀ a. UserInput -> Array Vacation -> Widget HTML a
 printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
@@ -114,7 +156,7 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
           <> (if holidaysThisMonth month > 0 then i "; ("(holidaysThisMonth month)" holidays)" else "")
           <> (if vacationTaken > 0.0 then i "   *** "vacationTaken" hours vacation taken" else "")
           <> "."
-    pure $ div [] [text msg]
+    pure $ DOM.div [] [DOM.text msg]
 
 
 parseVacationTime :: ∀ m. MonadError String m => String -> m Vacation
@@ -160,22 +202,21 @@ parseVacationTime inputStr = liftError $ runParser inputStr do
 getVacationTime :: ExceptT String (Widget HTML) Vacation
 getVacationTime = do
   ans <- lift $ 
-    ( text "Any vacations to log? (e.g., 8 hours in May 2028)"
-    <|> textInputWithButton "" "Enter" [Props._id "log-button"] []
+    ( DOM.text "Any vacations to log? (e.g., 8 hours in May 2028)"
+    <|> textInputWithButton "" "Enter" [Props._type "text", Props._id "log-button"] Option.empty
     )
   parseVacationTime ans
 
 applyAnyVacations :: Widget HTML (Either String { nHours :: Hours, month :: MonthDate }) -> UserInput -> Widget HTML Unit
 applyAnyVacations initialStats userInput = evalStateT (forever go) {stats: initialStats, currentVacations: []}
   where
-  go :: StateT ({ stats :: Widget HTML (Either String { nHours :: Hours, month :: MonthDate }), currentVacations :: Array { nHours :: Hours, month :: MonthDate }}) (Widget HTML) Unit
   go = do
     {stats, currentVacations} <- get
     parseResults <- lift (stats <|> runExceptT getVacationTime)
     case parseResults of
       Left err -> 
-        ( text err
-        <|> button [] [text "Try Again"]
+        ( DOM.text err
+        <|> DOM.button [] [DOM.text "Try Again"]
         )
       Right vacation -> do
         let newVacations = currentVacations <> [ vacation ]

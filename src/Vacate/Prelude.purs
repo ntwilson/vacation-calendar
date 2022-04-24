@@ -1,4 +1,4 @@
-module Vacate.Prelude (module Prelude, module Exports, clampEnum) where
+module Vacate.Prelude (module Prelude, module Exports, clampEnum, caseMaybe) where
 
 import Prelude hiding (div)
 
@@ -11,6 +11,7 @@ import Data.Function (on) as Exports
 import Data.Interpolate (i) as Exports
 import Data.Lazy (Lazy, defer, force) as Exports
 import Data.Maybe (Maybe(..), fromJust, fromMaybe, maybe) as Exports
+import Data.Maybe (maybe)
 import Data.Newtype (class Newtype, un, unwrap) as Exports
 import Data.Time.Duration (Hours(..)) as Exports
 import Data.Tuple.Nested ((/\)) as Exports
@@ -23,3 +24,5 @@ import Effect.Class.Console (log) as Exports
 clampEnum :: ∀ a. Exports.BoundedEnum a => Int -> a
 clampEnum = Exports.toEnumWithDefaults bottom top
 
+caseMaybe :: ∀ a b. { just :: a -> b, nothing :: b } -> Exports.Maybe a -> b
+caseMaybe { just, nothing } = maybe nothing just

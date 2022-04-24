@@ -4,6 +4,5 @@ import Vacate.Prelude as Prelude
 
 import Concur.Core (Widget) as Exports
 import Concur.React (HTML) as Exports
-import Concur.React.DOM (text) as Exports
 import Concur.React.Run (runWidgetInDom) as Exports
 
