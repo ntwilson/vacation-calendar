@@ -152,9 +152,9 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
       [ DOM.tr'
         [ DOM.th' [DOM.text "Month"]
         , DOM.th' [DOM.text "Vacation Available"]
-        , DOM.th' [DOM.text "Discretionary"]
-        , DOM.th' [DOM.text "Holidays"]
+        , DOM.th' [DOM.text "Disc. Available"]
         , DOM.th' [DOM.text "Vacation Taken"]
+        , DOM.th' [DOM.text "Holidays"]
         ]
       ]
     , DOM.tbody' 
@@ -162,12 +162,13 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
         (\(monthDate@(MonthDate { month }) /\ vacation) -> 
           let
             vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
+            printNumber = show <<< Int.floor
           in DOM.tr' 
             [ DOM.td' [DOM.text $ prettyPrint monthDate]
-            , DOM.td' [DOM.text $ i (un Hours vacation.vacationHours)" hrs"]
-            , DOM.td' [DOM.text $ i (un Hours vacation.discretionaryHours)" hrs"]
+            , DOM.td' [DOM.text $ i (printNumber $ un Hours vacation.vacationHours)" hrs"]
+            , DOM.td' [DOM.text $ i (printNumber $ un Hours vacation.discretionaryHours)" hrs"]
+            , DOM.td' [DOM.text $ i (printNumber vacationTaken)" hrs"]
             , DOM.td' [DOM.text $ show $ holidaysThisMonth month]
-            , DOM.td' [DOM.text $ i vacationTaken" hrs"]
             ]
         )
       )
