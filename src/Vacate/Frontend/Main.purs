@@ -177,11 +177,11 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
 parseVacationTime :: ∀ m. MonadError String m => String -> m Vacation
 parseVacationTime inputStr = liftError $ runParser inputStr do
   isNeg <- (try (string "-") $> true) <|> pure false
-  absHours <- Hours <$> (parseNumber <* skipSpaces)
+  absHours <- parseNumber <* skipSpaces
   try (string "hours" <|> string "hrs" <|> string "") *> skipSpaces
   try (string "in" <|> string "") *> skipSpaces
   month <- parseMonthDate
-  let nHours = if isNeg then negate absHours else absHours
+  let nHours = Hours $ if isNeg then negate absHours else absHours
   pure { nHours, month }
 
   where
