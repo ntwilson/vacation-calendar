@@ -19,13 +19,11 @@ import Data.String as String
 import Effect.Now (nowDate)
 import Option as Option
 import React.Basic.DOM (css)
-import React.Ref as Ref
 import React.SyntheticEvent (SyntheticMouseEvent)
 import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.String (skipSpaces, string)
 import Text.Parsing.Parser.Token (alphaNum)
-import Unsafe.Coerce (unsafeCoerce)
 import Vacate.Frontend.MUI (ValueLabelDisplay(..))
 import Vacate.Frontend.MUI as MUI
 import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
@@ -86,22 +84,21 @@ textInputWithButton :: ∀ a.
   (∀ b. Array (ReactProps b)) ->
   MUI.ButtonProps a ->
   Widget HTML String
-textInputWithButton val buttonlabel inpProps buttonProps = do
-  ref <- liftEffect Ref.createNodeRef
-  DOM.div'
-    [ DOM.input $ inpProps <>
-      [ Props.unsafeTargetValue <$> Props.onKeyEnter
-      , Props.defaultValue val
-      , Props.ref (Ref.fromRef ref)
-      ]
-    , DOM.text " "
-    , do
-      _ <- MUI.button (Option.alter {onClick: \(_::Maybe (SyntheticMouseEvent -> a)) -> Just identity} buttonProps) [DOM.text buttonlabel]
-      mInput <- liftEffect (Ref.getCurrentRef ref)
-      case mInput of
-        Nothing -> pure val
-        Just inp -> pure (unsafeCoerce inp).value
-    ]
+textInputWithButton val buttonlabel inpProps buttonProps = go val
+  where
+  go state = do
+    input <-
+      DOM.div'
+        [ DOM.input $ inpProps <>
+          [ Props.onChange <#> Props.unsafeTargetValue <#> Just 
+          , Props.onKeyEnter $> Nothing
+          , Props.value state
+          ]
+        , DOM.text " "
+        , MUI.button (Option.alter {onClick: (\(_ :: Maybe (SyntheticMouseEvent -> a)) -> Just $ const Nothing)} buttonProps) [DOM.text buttonlabel]
+        ]
+
+    input # caseMaybe { just: go, nothing: pure state }
 
 
 getInput :: Widget HTML UserInput
@@ -112,7 +109,7 @@ getInput = do
   case parseInput vacation discretionary date of
     Right input -> pure input
     Left err -> do
-      _ <- (DOM.text err <|> DOM.button [] [])
+      _ <- (DOM.text err <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Retry"])
       getInput
 
   where
@@ -127,7 +124,11 @@ getInput = do
         <|> DOM.text "How many discretionary hours do you have left right now?"
         <|> slider (Just <<< {vacation, discretionary: _, date})
         <|> DOM.text "How far into the future are you trying to plan? (Month/Year e.g., January 2025)"
-        <|> DOM.input [Props._type "text", Props.onChange <#> unsafeTargetValue <#> {vacation, discretionary, date: _} <#> Just]
+        <|> DOM.input 
+          [ Props._type "text"
+          , Props.onChange <#> unsafeTargetValue <#> {vacation, discretionary, date: _} <#> Just
+          , Props.onKeyEnter $> Nothing
+          ]
         <|> MUI.button (Option.fromRecord {onClick: const Nothing, style: css {display: "flex"}}) [DOM.text "Enter"]
         )
 
@@ -146,25 +147,41 @@ printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
     thisMonthStats = { vacationHours: Hours vacationSoFar, discretionaryHours: Hours discretionarySoFar }
     allStats = vacationStatsByMonth vacations thisMonthStats thisMonth dateInTheFuture
 
-  fold $ do
-    (monthDate@(MonthDate { month }) /\ vacation) <- (Map.toUnfoldable allStats :: Array _)
-    let
-      vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
-      msg =
-        i (prettyPrint monthDate)": "(un Hours vacation.vacationHours)" hours of vacation; "
-          <> i (un Hours vacation.discretionaryHours)" discretionary hours"
-          <> (if holidaysThisMonth month > 0 then i "; ("(holidaysThisMonth month)" holidays)" else "")
-          <> (if vacationTaken > 0.0 then i "   *** "vacationTaken" hours vacation taken" else "")
-          <> "."
-    pure $ DOM.div [] [DOM.text msg]
+  DOM.table'
+    [ DOM.thead' 
+      [ DOM.tr'
+        [ DOM.th' [DOM.text "Month"]
+        , DOM.th' [DOM.text "Vacation Available"]
+        , DOM.th' [DOM.text "Discretionary"]
+        , DOM.th' [DOM.text "Holidays"]
+        , DOM.th' [DOM.text "Vacation Taken"]
+        ]
+      ]
+    , DOM.tbody' 
+      ( (Map.toUnfoldable allStats :: Array _) <#> 
+        (\(monthDate@(MonthDate { month }) /\ vacation) -> 
+          let
+            vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
+          in DOM.tr' 
+            [ DOM.td' [DOM.text $ prettyPrint monthDate]
+            , DOM.td' [DOM.text $ i (un Hours vacation.vacationHours)" hrs"]
+            , DOM.td' [DOM.text $ i (un Hours vacation.discretionaryHours)" hrs"]
+            , DOM.td' [DOM.text $ show $ holidaysThisMonth month]
+            , DOM.td' [DOM.text $ i vacationTaken" hrs"]
+            ]
+        )
+      )
+    ]
 
 
 parseVacationTime :: ∀ m. MonadError String m => String -> m Vacation
 parseVacationTime inputStr = liftError $ runParser inputStr do
-  nHours <- Hours <$> (parseNumber <* skipSpaces)
+  isNeg <- (try (string "-") $> true) <|> pure false
+  absHours <- Hours <$> (parseNumber <* skipSpaces)
   try (string "hours" <|> string "hrs" <|> string "") *> skipSpaces
   try (string "in" <|> string "") *> skipSpaces
   month <- parseMonthDate
+  let nHours = if isNeg then negate absHours else absHours
   pure { nHours, month }
 
   where
@@ -215,9 +232,10 @@ applyAnyVacations initialStats userInput = evalStateT (forever go) {stats: initi
     parseResults <- lift (stats <|> runExceptT getVacationTime)
     case parseResults of
       Left err -> 
-        ( DOM.text err
-        <|> DOM.button [] [DOM.text "Try Again"]
-        )
+        void 
+          ( DOM.text err
+          <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Try Again"]
+          )
       Right vacation -> do
         let newVacations = currentVacations <> [ vacation ]
         put { stats: printStats userInput newVacations, currentVacations: newVacations }

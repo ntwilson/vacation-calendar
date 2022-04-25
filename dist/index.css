@@ -3,8 +3,34 @@ html {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+#contents {
+  margin: 1rem;
+}
+
 .top-slider {
   max-width: 80vw;
+}
+
+table { 
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+table, th, td {
+  border-collapse: collapse;
+}
+
+table, thead {
+  border: 2px solid black;
+}
+
+th {
+  padding: 0 1em;
+}
+
+td {
+  padding: 0 1em;
+  border: 1px solid grey;
 }
 
 button {
@@ -37,6 +63,7 @@ input[type="text"] {
   padding: 0.3em 0.5em;
   font-size: large;
   line-height: 1.5;
+  margin: 1rem;
 }
 
 .nav-bar { 
