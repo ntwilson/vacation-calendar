@@ -14,10 +14,12 @@ html {
 table { 
   line-height: 1.5;
   margin-bottom: 1rem;
+  max-width: 95%;
 }
 
 table, th, td {
   border-collapse: collapse;
+  overflow-wrap: anywhere;
 }
 
 table, thead {
