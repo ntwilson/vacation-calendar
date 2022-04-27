@@ -3,7 +3,7 @@ module Vacate.Frontend.Main where
 import Vacate.Frontend.Prelude
 
 import Concur.React.DOM as DOM
-import Concur.React.Props (ReactProps, unsafeTargetValue)
+import Concur.React.Props (ReactProps)
 import Concur.React.Props as Props
 import Control.Monad.Except (class MonadError, ExceptT, runExceptT, throwError)
 import Control.Monad.Rec.Class (forever)
@@ -14,7 +14,6 @@ import Data.Array as Array
 import Data.Formatter.Parser.Number (parseInteger, parseNumber)
 import Data.Int as Int
 import Data.Map as Map
-import Data.String (Pattern(..))
 import Data.String as String
 import Effect.Now (nowDate)
 import Option as Option
@@ -31,20 +30,6 @@ import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
 import Vacate.Shared.MonthDate as MonthDate
 
 type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate }
-
-parseInput :: Int -> Int -> String -> Either String UserInput
-parseInput vacation discretionary date = do
-  let vacationSoFar = Int.toNumber vacation
-  let discretionarySoFar = Int.toNumber discretionary
-
-  case String.split (Pattern " ") date of
-    [ monthStr, yearStr ] -> do
-      month <- parseMonth monthStr # note (i "Unable to recognize '"monthStr"' as a month")
-      yearInt <- Int.fromString yearStr # note (i "Unable to parse '"yearStr"' as a number")
-      year <- toEnum yearInt # note (i "Year '"yearStr"' is outside the bounds of known years")
-      pure $ { vacationSoFar, discretionarySoFar, dateInTheFuture: MonthDate { month, year } }
-    _ -> Left $ i "Expecting 'Month Year', e.g., 'January 2025', but got '"date"'"
-
 
 parseMonth :: String -> Maybe Month
 parseMonth monthStr = case String.toLower monthStr of
@@ -105,13 +90,6 @@ getInput :: Widget HTML UserInput
 getInput = do
   {vacation, discretionary, date } <- selectVacationTimes
   pure {vacationSoFar: Int.toNumber vacation, discretionarySoFar: Int.toNumber discretionary, dateInTheFuture: date}
-
-
-  -- case parseInput vacation discretionary date of
-  --   Right input -> pure input
-  --   Left err -> do
-  --     _ <- (DOM.text err <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Retry"])
-  --     getInput
 
   where
 
