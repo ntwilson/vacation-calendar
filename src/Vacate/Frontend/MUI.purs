@@ -5,20 +5,24 @@ import Vacate.Prelude
 import Concur.Core (class LiftWidget, Widget)
 import Concur.Core.DOM as Concur
 import Concur.Core.Props (Props(..))
-import Concur.React (HTML)
+import Concur.React (HTML, renderComponent)
 import Control.MultiAlternative (class MultiAlternative)
 import Control.ShiftMap (class ShiftMap)
 import Data.Argonaut (class EncodeJson, encodeJson)
 import Data.Argonaut as Json
+import Data.DateTime (DateTime(..))
+import Data.JSDate as JSDate
 import Effect.Uncurried (mkEffectFn1, mkEffectFn2)
 import Foreign (Foreign, unsafeToForeign)
 import Foreign.Object (Object)
 import Option as Option
-import React (Children, ReactClass, ReactElement, unsafeCreateElement, unsafeCreateLeafElement)
+import React (Children, ReactClass, ReactElement, createElement, unsafeCreateElement, unsafeCreateLeafElement)
 import React.Basic.DOM (CSS)
 import React.SyntheticEvent (SyntheticMouseEvent)
 import Type.Row.Homogeneous (class Homogeneous)
 import Unsafe.Coerce (unsafeCoerce)
+import Vacate.Shared.MonthDate (MonthDate, onTheFirst)
+import Vacate.Shared.MonthDate as MonthDate
 
 class (ShiftMap (Widget HTML) m, MultiAlternative m, LiftWidget HTML m) <= ReactWidget m
 instance (ShiftMap (Widget HTML) m, MultiAlternative m, LiftWidget HTML m) => ReactWidget m
@@ -137,3 +141,67 @@ slider = widgetLeaf rawSliderImpl makeProps
     , value: PrimProp <<< unsafeToForeign
     , valueLabelDisplay: PrimProp <<< unsafeToForeign <<< encodeJson
     }
+
+data DatePickerView = Year | Month | Day
+instance EncodeJson DatePickerView where
+  encodeJson Year = Json.fromString "year"
+  encodeJson Month = Json.fromString "month"
+  encodeJson Day = Json.fromString "day"
+
+-- foreign import data TextProps :: Type
+
+type DatePickerProps a = Option.Option
+  ( className :: String
+  , views :: Array DatePickerView
+  , label :: String
+  , minDate :: Date
+  , maxDate :: Date
+  , value :: Date
+  , onChange :: Date -> a
+  -- , renderInput :: TextProps -> Widget HTML Void
+  )
+
+foreign import data DateAdapter :: Type
+foreign import datefnsAdapter :: DateAdapter
+foreign import localizationProvider :: ReactClass {dateAdapter :: DateAdapter, children :: Children}
+foreign import rawDatePicker :: ReactClass {}
+foreign import rawTextField :: ReactClass {}
+rawDatePickerImpl :: Object Foreign -> ReactElement
+rawDatePickerImpl props =
+  createElement localizationProvider {dateAdapter: datefnsAdapter} $ 
+    [ unsafeCreateLeafElement rawDatePicker $ unsafeCoerce props ]
+
+datePicker :: ∀ m a. ReactWidget m => DatePickerProps a -> m a
+datePicker = widgetLeaf rawDatePickerImpl makeProps
+  where 
+  atMidnight date = DateTime date bottom
+  makeProps = optionToObject <<< Option.insert' { renderInput: PrimProp $ unsafeToForeign $ unsafeCreateLeafElement rawTextField } <<< Option.modify'
+    { className: PrimProp <<< unsafeToForeign
+    , views: PrimProp <<< unsafeToForeign <<< map encodeJson 
+    , label: PrimProp <<< unsafeToForeign
+    , minDate: PrimProp <<< unsafeToForeign <<< JSDate.fromDateTime <<< atMidnight
+    , maxDate: PrimProp <<< unsafeToForeign <<< JSDate.fromDateTime <<< atMidnight
+    , value: PrimProp <<< unsafeToForeign <<< JSDate.fromDateTime <<< atMidnight
+    , onChange: \transformValue -> Handler (\effFn -> unsafeToForeign $ mkEffectFn1 \value -> 
+        case JSDate.toDate value of 
+          Just d -> effFn (transformValue d)
+          Nothing -> pure unit
+      )
+    -- , renderInput: \renderFn -> PrimProp $ unsafeToForeign $ renderComponent <<< renderFn
+    }
+
+type MonthDatePickerProps a = Option.Option
+  ( className :: String
+  , label :: String
+  , minDate :: Date
+  , maxDate :: Date
+  , value :: MonthDate
+  , onChange :: MonthDate -> a
+  -- , renderInput :: TextProps -> Widget HTML Void
+  )
+
+monthDatePicker :: ∀ m a. ReactWidget m => MonthDatePickerProps a -> m a
+monthDatePicker = datePicker <<< Option.insert' { views: [Year, Month] } <<< Option.modify'
+  { value: onTheFirst
+  , onChange: \fn -> fn <<< MonthDate.fromDate
+  }

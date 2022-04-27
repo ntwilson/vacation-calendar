@@ -24,7 +24,7 @@ import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.String (skipSpaces, string)
 import Text.Parsing.Parser.Token (alphaNum)
-import Vacate.Frontend.MUI (ValueLabelDisplay(..))
+import Vacate.Frontend.MUI (ValueLabelDisplay(..), monthDatePicker)
 import Vacate.Frontend.MUI as MUI
 import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
 import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
@@ -103,19 +103,23 @@ textInputWithButton val buttonlabel inpProps buttonProps = go val
 
 getInput :: Widget HTML UserInput
 getInput = do
-  {vacation, discretionary, date} <- selectVacationTimes
+  {vacation, discretionary, date } <- selectVacationTimes
+  pure {vacationSoFar: Int.toNumber vacation, discretionarySoFar: Int.toNumber discretionary, dateInTheFuture: date}
 
 
-  case parseInput vacation discretionary date of
-    Right input -> pure input
-    Left err -> do
-      _ <- (DOM.text err <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Retry"])
-      getInput
+  -- case parseInput vacation discretionary date of
+  --   Right input -> pure input
+  --   Left err -> do
+  --     _ <- (DOM.text err <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Retry"])
+  --     getInput
 
   where
 
-  selectVacationTimes :: Widget HTML { vacation :: Int, discretionary :: Int, date :: String }
-  selectVacationTimes = go { vacation: 0, discretionary: 0, date: "" }
+  selectVacationTimes :: Widget HTML { vacation :: Int, discretionary :: Int, date :: MonthDate }
+  selectVacationTimes = do
+    thisMonth <- liftEffect $ MonthDate.fromDate <$> nowDate
+    go { vacation: 0, discretionary: 0, date: thisMonth }
+
     where 
     go {vacation, discretionary, date} = do
       input <- 
@@ -123,11 +127,16 @@ getInput = do
         <|> slider (Just <<< {vacation: _, discretionary, date})
         <|> DOM.text "How many discretionary hours do you have left right now?"
         <|> slider (Just <<< {vacation, discretionary: _, date})
-        <|> DOM.text "How far into the future are you trying to plan? (Month/Year e.g., January 2025)"
-        <|> DOM.input 
-          [ Props._type "text"
-          , Props.onChange <#> unsafeTargetValue <#> {vacation, discretionary, date: _} <#> Just
-          , Props.onKeyEnter $> Nothing
+        <|> DOM.text "How far into the future are you trying to plan?"
+        <|> DOM.div
+          [ Props.className "date-box" ]
+          [ monthDatePicker 
+            ( Option.fromRecord 
+              { label: "Month & Year"
+              , value: date
+              , onChange: (Just <<< { vacation, discretionary, date: _ })
+              }
+            )
           ]
         <|> MUI.button (Option.fromRecord {onClick: const Nothing, style: css {display: "flex"}}) [DOM.text "Enter"]
         )

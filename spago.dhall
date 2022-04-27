@@ -31,6 +31,7 @@ to generate this file without the comments in this block.
   , "httpure"
   , "integers"
   , "interpolate"
+  , "js-date"
   , "lazy"
   , "maybe"
   , "newtype"

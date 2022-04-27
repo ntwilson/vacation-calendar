@@ -11,6 +11,10 @@ html {
   max-width: 80vw;
 }
 
+.date-box { 
+  margin-top: 2rem;
+}
+
 table { 
   line-height: 1.5;
   margin-bottom: 1rem;
@@ -33,16 +37,6 @@ td {
   border: 1px solid grey;
 }
 
-button {
-  font-size: large;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  border: none;
-  border-radius: 0.6em;
-  background-color: #444;
-  color: white;
-  padding: 0.5em 2em;
-  cursor: pointer;
-}
 
 hr { 
   width: 97%;
