@@ -5,7 +5,7 @@ import Vacate.Prelude
 import Concur.Core (class LiftWidget, Widget)
 import Concur.Core.DOM as Concur
 import Concur.Core.Props (Props(..))
-import Concur.React (HTML, renderComponent)
+import Concur.React (HTML)
 import Control.MultiAlternative (class MultiAlternative)
 import Control.ShiftMap (class ShiftMap)
 import Data.Argonaut (class EncodeJson, encodeJson)
@@ -117,7 +117,7 @@ type SliderProps a = Option.Option
   , valueLabelDisplay :: ValueLabelDisplay
   )
 
-foreign import rawSlider :: ReactClass {}
+foreign import rawSlider :: ReactClass Void
 rawSliderImpl :: Object Foreign -> ReactElement
 rawSliderImpl props = unsafeCreateLeafElement rawSlider $ unsafeCoerce props
 
@@ -148,8 +148,6 @@ instance EncodeJson DatePickerView where
   encodeJson Month = Json.fromString "month"
   encodeJson Day = Json.fromString "day"
 
--- foreign import data TextProps :: Type
-
 type DatePickerProps a = Option.Option
   ( className :: String
   , views :: Array DatePickerView
@@ -158,14 +156,13 @@ type DatePickerProps a = Option.Option
   , maxDate :: Date
   , value :: Date
   , onChange :: Date -> a
-  -- , renderInput :: TextProps -> Widget HTML Void
   )
 
 foreign import data DateAdapter :: Type
 foreign import datefnsAdapter :: DateAdapter
 foreign import localizationProvider :: ReactClass {dateAdapter :: DateAdapter, children :: Children}
-foreign import rawDatePicker :: ReactClass {}
-foreign import rawTextField :: ReactClass {}
+foreign import rawDatePicker :: ReactClass Void
+foreign import rawTextField :: ReactClass Void
 rawDatePickerImpl :: Object Foreign -> ReactElement
 rawDatePickerImpl props =
   createElement localizationProvider {dateAdapter: datefnsAdapter} $ 
@@ -187,7 +184,6 @@ datePicker = widgetLeaf rawDatePickerImpl makeProps
           Just d -> effFn (transformValue d)
           Nothing -> pure unit
       )
-    -- , renderInput: \renderFn -> PrimProp $ unsafeToForeign $ renderComponent <<< renderFn
     }
 
 type MonthDatePickerProps a = Option.Option
@@ -197,7 +193,6 @@ type MonthDatePickerProps a = Option.Option
   , maxDate :: Date
   , value :: MonthDate
   , onChange :: MonthDate -> a
-  -- , renderInput :: TextProps -> Widget HTML Void
   )
 
 monthDatePicker :: ∀ m a. ReactWidget m => MonthDatePickerProps a -> m a
@@ -205,3 +200,30 @@ monthDatePicker = datePicker <<< Option.insert' { views: [Year, Month] } <<< Opt
   { value: onTheFirst
   , onChange: \fn -> fn <<< MonthDate.fromDate
   }
+
+foreign import rawDataGrid :: ReactClass Void
+rawDataGridImpl :: Object Foreign -> ReactElement
+rawDataGridImpl props = unsafeCreateLeafElement rawDataGrid $ unsafeCoerce props
+
+type DataGridProps a r = Option.Option 
+  ( classes :: Option.Option ( cell :: String, columnHeader :: String, columnHeaderTitle :: String )
+  , columns :: Array (Option.Option ( field :: String, headerName :: String, width :: Int, sortable :: Boolean, flex :: Int ))
+  , rows :: Array { id :: Int | r }
+  , onRowClick :: { id :: Int, row :: { id :: Int | r } } -> a
+  , autoHeight :: Boolean
+  , hideFooter :: Boolean
+  , selectionModel :: Array Int
+  )
+
+dataGrid :: ∀ m a r. ReactWidget m => DataGridProps a r -> m a
+dataGrid = widgetLeaf rawDataGridImpl makeProps
+  where 
+  makeProps = optionToObject <<< Option.modify'
+    { classes: PrimProp <<< unsafeToForeign
+    , columns: PrimProp <<< unsafeToForeign
+    , rows: PrimProp <<< unsafeToForeign
+    , autoHeight: PrimProp <<< unsafeToForeign
+    , hideFooter: PrimProp <<< unsafeToForeign
+    , selectionModel: PrimProp <<< unsafeToForeign
+    , onRowClick: \fn -> makeHandler fn
+    }

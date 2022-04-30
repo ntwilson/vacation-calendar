@@ -9,6 +9,7 @@ html {
 
 .top-slider {
   max-width: 80vw;
+  margin-top: 2rem;
 }
 
 .date-box { 
@@ -105,4 +106,13 @@ input[type="text"] {
 
 .checkbox-text:hover {
   cursor: pointer;
+}
+
+.MuiDataGrid-columnHeaderTitle.wrapping-header { 
+  white-space: break-spaces;
+  line-height: 1;
+}
+
+.MuiDataGrid-cell--textLeft.MuiDataGrid-cell.wrapping-cell {
+  white-space: break-spaces;
 }

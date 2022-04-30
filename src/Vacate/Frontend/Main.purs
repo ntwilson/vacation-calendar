@@ -3,88 +3,20 @@ module Vacate.Frontend.Main where
 import Vacate.Frontend.Prelude
 
 import Concur.React.DOM as DOM
-import Concur.React.Props (ReactProps)
 import Concur.React.Props as Props
-import Control.Monad.Except (class MonadError, ExceptT, runExceptT, throwError)
-import Control.Monad.Rec.Class (forever)
-import Control.Monad.State (evalStateT, get, put)
-import Control.Monad.Trans.Class (lift)
-import Data.Array (many)
 import Data.Array as Array
-import Data.Formatter.Parser.Number (parseInteger, parseNumber)
 import Data.Int as Int
 import Data.Map as Map
-import Data.String as String
 import Effect.Now (nowDate)
 import Option as Option
 import React.Basic.DOM (css)
-import React.SyntheticEvent (SyntheticMouseEvent)
-import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.String (skipSpaces, string)
-import Text.Parsing.Parser.Token (alphaNum)
-import Vacate.Frontend.MUI (ValueLabelDisplay(..), monthDatePicker)
+import Vacate.Frontend.MUI (ValueLabelDisplay(..), dataGrid, monthDatePicker)
 import Vacate.Frontend.MUI as MUI
-import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
+import Vacate.Shared.Calculator (holidaysThisMonth, vacationStatsByMonth)
 import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
 import Vacate.Shared.MonthDate as MonthDate
 
 type UserInput = { vacationSoFar :: Number, discretionarySoFar :: Number, dateInTheFuture :: MonthDate }
-
-parseMonth :: String -> Maybe Month
-parseMonth monthStr = case String.toLower monthStr of
-  "january" -> Just January
-  "february" -> Just February
-  "march" -> Just March
-  "april" -> Just April
-  "may" -> Just May
-  "june" -> Just June
-  "july" -> Just July
-  "august" -> Just August
-  "september" -> Just September
-  "october" -> Just October
-  "november" -> Just November
-  "december" -> Just December
-
-  "jan" -> Just January
-  "feb" -> Just February
-  "mar" -> Just March
-  "apr" -> Just April
-  "may" -> Just May
-  "jun" -> Just June
-  "jul" -> Just July
-  "aug" -> Just August
-  "sep" -> Just September
-  "sept" -> Just September
-  "oct" -> Just October
-  "nov" -> Just November
-  "dec" -> Just December
-
-  _ -> Nothing
-
-
-textInputWithButton :: ∀ a.
-  String ->
-  String ->
-  (∀ b. Array (ReactProps b)) ->
-  MUI.ButtonProps a ->
-  Widget HTML String
-textInputWithButton val buttonlabel inpProps buttonProps = go val
-  where
-  go state = do
-    input <-
-      DOM.div'
-        [ DOM.input $ inpProps <>
-          [ Props.onChange <#> Props.unsafeTargetValue <#> Just 
-          , Props.onKeyEnter $> Nothing
-          , Props.value state
-          ]
-        , DOM.text " "
-        , MUI.button (Option.alter {onClick: (\(_ :: Maybe (SyntheticMouseEvent -> a)) -> Just $ const Nothing)} buttonProps) [DOM.text buttonlabel]
-        ]
-
-    input # caseMaybe { just: go, nothing: pure state }
-
 
 getInput :: Widget HTML UserInput
 getInput = do
@@ -122,116 +54,93 @@ getInput = do
       input # caseMaybe { just: go, nothing: pure {vacation, discretionary, date} }
 
     slider onChangeCommitted = 
-      DOM.div [Props.className "top-slider"] [MUI.slider (Option.fromRecord {onChangeCommitted, valueLabelDisplay: Auto})]
+      DOM.div [Props.className "top-slider"] [MUI.slider (Option.fromRecord {onChangeCommitted, valueLabelDisplay: On})]
 
+type TableRow = { id :: Int, month :: String, vacation :: String, discretionary :: String, taken :: String, holidays :: String, monthValue :: MonthDate }
+data TableInteraction = RowSelection { id :: Int, row :: TableRow } | AdjustVacation Int
 
+vacationTable :: ∀ a. UserInput -> Widget HTML a
+vacationTable { vacationSoFar, discretionarySoFar, dateInTheFuture } = go {vacations: [], selectedRow: Nothing}
+  where
+  go {vacations, selectedRow} = do
+    today <- liftEffect nowDate
+    let
+      thisMonth = MonthDate.fromDate today
+      thisMonthStats = { vacationHours: Hours vacationSoFar, discretionaryHours: Hours discretionarySoFar }
+      allStats = vacationStatsByMonth vacations thisMonthStats thisMonth dateInTheFuture
 
-printStats :: ∀ a. UserInput -> Array Vacation -> Widget HTML a
-printStats { vacationSoFar, discretionarySoFar, dateInTheFuture } vacations = do
-  today <- liftEffect nowDate
-  let
-    thisMonth = MonthDate.fromDate today
-    thisMonthStats = { vacationHours: Hours vacationSoFar, discretionaryHours: Hours discretionarySoFar }
-    allStats = vacationStatsByMonth vacations thisMonthStats thisMonth dateInTheFuture
-
-  DOM.table'
-    [ DOM.thead' 
-      [ DOM.tr'
-        [ DOM.th' [DOM.text "Month"]
-        , DOM.th' [DOM.text "Vacation Available"]
-        , DOM.th' [DOM.text "Disc. Available"]
-        , DOM.th' [DOM.text "Vacation Taken"]
-        , DOM.th' [DOM.text "Holidays"]
-        ]
-      ]
-    , DOM.tbody' 
-      ( (Map.toUnfoldable allStats :: Array _) <#> 
-        (\(monthDate@(MonthDate { month }) /\ vacation) -> 
-          let
-            vacationTaken = Array.filter (_.month >>> (==) monthDate) vacations # map (_.nHours) # fold # un Hours
-            printNumber = show <<< Int.floor
-          in DOM.tr' 
-            [ DOM.td' [DOM.text $ prettyPrint monthDate]
-            , DOM.td' [DOM.text $ i (printNumber $ un Hours vacation.vacationHours)" hrs"]
-            , DOM.td' [DOM.text $ i (printNumber $ un Hours vacation.discretionaryHours)" hrs"]
-            , DOM.td' [DOM.text $ i (printNumber vacationTaken)" hrs"]
-            , DOM.td' [DOM.text $ show $ holidaysThisMonth month]
+    interaction <- 
+      ( ( dataGrid $ Option.fromRecord
+          { classes: Option.fromRecord { cell: "wrapping-cell", columnHeaderTitle: "wrapping-header" }
+          , columns:
+            [ Option.fromRecord { field: "month", headerName: "Month", sortable: false, flex: 1 }
+            , Option.fromRecord { field: "vacation", headerName: "Vacation Available", sortable: false, flex: 1 }  
+            , Option.fromRecord { field: "discretionary", headerName: "Disc. Available", sortable: false, flex: 1 }
+            , Option.fromRecord { field: "taken", headerName: "Vacation Taken", sortable: false, flex: 1 }
+            , Option.fromRecord { field: "holidays", headerName: "Holidays", sortable: false, flex: 1 }
             ]
+          , rows: case selectedRow of 
+            Just {row} -> [ row ]
+            Nothing -> 
+              ( (Map.toUnfoldable allStats :: Array _) # Array.mapWithIndex 
+                (\id (monthDate@(MonthDate { month }) /\ vacation) -> 
+                  let
+                    vacationTaken = Array.filter (_.month >>> (_ == monthDate)) vacations # map (_.nHours) # fold # un Hours
+                    printNumber = show <<< Int.floor
+                  in
+                    { id
+                    , month: prettyPrint monthDate
+                    , monthValue: monthDate
+                    , vacation: i (printNumber $ un Hours vacation.vacationHours)" hrs" :: String
+                    , discretionary: i (printNumber $ un Hours vacation.discretionaryHours)" hrs" :: String
+                    , taken: i (printNumber vacationTaken)" hrs" :: String
+                    , holidays: show $ holidaysThisMonth month
+                    }
+                )
+              )
+          , onRowClick: \{id, row} -> RowSelection {id, row}
+          , autoHeight: true
+          , hideFooter: true
+          , selectionModel: selectedRow # caseMaybe { just: \{id} -> [id], nothing: [] }
+          }
         )
-      )
-    ]
-
-
-parseVacationTime :: ∀ m. MonadError String m => String -> m Vacation
-parseVacationTime inputStr = liftError $ runParser inputStr do
-  isNeg <- (try (string "-") $> true) <|> pure false
-  absHours <- parseNumber <* skipSpaces
-  try (string "hours" <|> string "hrs" <|> string "") *> skipSpaces
-  try (string "in" <|> string "") *> skipSpaces
-  month <- parseMonthDate
-  let nHours = Hours $ if isNeg then negate absHours else absHours
-  pure { nHours, month }
-
-  where
-  parseMonthDate :: Parser String MonthDate
-  parseMonthDate = do
-    month <- parseMonth'
-    skipSpaces
-    year <- parseYear
-    pure $ MonthDate { month, year }
-
-  parseMonth' :: Parser String Month
-  parseMonth' = do
-    monthStr <- parseWord
-    parseMaybeWith (defer \_ -> i "Can't parse '"monthStr"' as a month") parseMonth monthStr
-
-  parseYear :: Parser String Year
-  parseYear = do
-    yearInt <- parseInteger
-    parseMaybeWith (defer \_ -> i yearInt" is out of range of valid years") toEnum yearInt
-
-  parseWord :: Parser String String
-  parseWord = do
-    chars <- many alphaNum
-    pure $ String.fromCodePointArray $ map String.codePointFromChar $ chars
-
-  parseMaybeWith :: ∀ stream a b. Lazy String -> (a -> Maybe b) -> a -> Parser stream b
-  parseMaybeWith msg tryParse x =
-    case tryParse x of
-      Nothing -> fail $ force msg
-      Just parsed -> pure parsed
-
-  liftError (Left err) = throwError $ parseErrorMessage err
-  liftError (Right err) = pure err
-
-getVacationTime :: ExceptT String (Widget HTML) Vacation
-getVacationTime = do
-  ans <- lift $ 
-    ( DOM.text "Any vacations to log? (e.g., 8 hours in May 2028)"
-    <|> textInputWithButton "" "Enter" [Props._type "text", Props._id "log-button"] Option.empty
-    )
-  parseVacationTime ans
-
-applyAnyVacations :: Widget HTML (Either String { nHours :: Hours, month :: MonthDate }) -> UserInput -> Widget HTML Unit
-applyAnyVacations initialStats userInput = evalStateT (forever go) {stats: initialStats, currentVacations: []}
-  where
-  go = do
-    {stats, currentVacations} <- get
-    parseResults <- lift (stats <|> runExceptT getVacationTime)
-    case parseResults of
-      Left err -> 
-        void 
-          ( DOM.text err
-          <|> MUI.button (Option.fromRecord {onClick: \x -> x}) [DOM.text "Try Again"]
+      <|> case selectedRow of
+        Just {id, row} -> 
+          ( DOM.div' [DOM.text $ i "How much vacation will you take in "row.month"?"]
+          <|> DOM.div [Props.className "top-slider"] 
+            [ MUI.slider $ Option.fromRecord 
+              { value: 
+                vacations 
+                # Array.find (\{month} -> prettyPrint month == row.month)
+                # caseMaybe {just: Int.floor <<< un Hours <<< _.nHours, nothing: 0}
+              , onChange: AdjustVacation
+              , valueLabelDisplay: On
+              }
+            ] 
+          <|> MUI.button (Option.fromRecord {onClick: const $ RowSelection {id, row}, style: css {display: "flex"}}) [DOM.text "Enter"]
           )
-      Right vacation -> do
-        let newVacations = currentVacations <> [ vacation ]
-        put { stats: printStats userInput newVacations, currentVacations: newVacations }
+        Nothing -> mempty
+      )
+
+    let 
+      selection = case interaction, selectedRow of
+        RowSelection newSelectedRow, Just {id} | newSelectedRow.id == id -> Nothing
+        RowSelection newSelectedRow, _ -> Just newSelectedRow
+        _, _ -> selectedRow
+
+      newVacations = case interaction, selectedRow of
+        AdjustVacation hrs, Just {row} -> case Array.find (\{month} -> prettyPrint month == row.month) vacations of
+          Just vacation -> vacations # Array.delete vacation # Array.cons {month: vacation.month, nHours: Hours (Int.toNumber hrs)}
+          Nothing -> vacations # Array.cons {month: row.monthValue, nHours: Hours (Int.toNumber hrs)}
+        _, _ -> vacations
+      
+
+    go {vacations: newVacations, selectedRow: selection}
 
 content :: Widget HTML Unit
 content = do
   input <- getInput
-  applyAnyVacations (printStats input []) input
+  vacationTable input 
 
 
 main :: Effect Unit

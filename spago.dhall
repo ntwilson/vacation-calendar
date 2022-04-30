@@ -49,6 +49,7 @@ to generate this file without the comments in this block.
   , "psci-support"
   , "react"
   , "react-basic-dom"
+  , "record"
   , "spec"
   , "spec-discovery"
   , "strings"
