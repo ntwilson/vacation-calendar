@@ -7,8 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "start": "node ./release/index.js",
-    "start-dev": "spago run -m Vacate.Backend.Main --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
+    "start-prod": "node ./release/main.js",
+    "start": "spago run -m Vacate.Backend.Main --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "ps": "spago build --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "watch-ps": "spago build --watch --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "test": "spago test --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
