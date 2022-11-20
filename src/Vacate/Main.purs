@@ -18,10 +18,11 @@ import Data.String as String
 import Effect.Now (nowDate)
 import Node.ReadLine.Aff (Interface)
 import Node.ReadLine.Aff as RL
-import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.String (skipSpaces, string)
-import Text.Parsing.Parser.Token (alphaNum)
+import Parsing (Parser, fail, parseErrorMessage, runParser)
+import Parsing.Combinators (try)
+import Parsing.String (string)
+import Parsing.String.Basic (skipSpaces)
+import Parsing.Token (alphaNum)
 import Vacate.Shared.Calculator (Vacation, holidaysThisMonth, vacationStatsByMonth)
 import Vacate.Shared.MonthDate (MonthDate(..), prettyPrint)
 import Vacate.Shared.MonthDate as MonthDate

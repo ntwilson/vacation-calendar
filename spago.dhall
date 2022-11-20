@@ -46,7 +46,6 @@ to generate this file without the comments in this block.
   , "ordered-collections"
   , "parsing"
   , "prelude"
-  , "psci-support"
   , "react"
   , "react-basic-dom"
   , "spec"

@@ -9,6 +9,7 @@
   "scripts": {
     "start-prod": "node ./release/main.js",
     "start": "spago run -m Vacate.Backend.Main --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
+    "start-cli": "spago run -m Vacate.Main --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "ps": "spago build --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "watch-ps": "spago build --watch --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "test": "spago test --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
@@ -28,10 +29,10 @@
   },
   "homepage": "https://github.com/ntwilson/vacation-calendar#readme",
   "devDependencies": {
-    "purescript": "^0.14.4",
+    "purescript": "^0.15.4",
     "purescript-psa": "^0.8.2",
-    "purs-tidy": "^0.6.2",
-    "spago": "^0.20.3",
+    "purs-tidy": "^0.7.2",
+    "spago": "^0.20.8",
     "webpack": "^5.24.3",
     "webpack-cli": "^4.5.0",
     "webpack-merge": "^5.7.3"
@@ -45,8 +46,8 @@
     "@mui/x-date-pickers": "^5.0.0-alpha.2",
     "date-fns": "^2.28.0",
     "pg": "^8.5.1",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "url": "^0.11.0",
     "xhr2": "^0.2.1"
   }

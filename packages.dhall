@@ -98,24 +98,103 @@ in  upstream
       }
 -------------------------------
 -}
+
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.14.2-20210713/packages.dhall sha256:654c3148cb995f642c73b4508d987d9896e2ad3ea1d325a1e826c034c0d3cd7b
+      https://github.com/purescript/package-sets/releases/download/psc-0.15.4-20220816/packages.dhall
+        sha256:8b4467b4b5041914f9b765779c8936d6d4c230b1f60eb64f6269c71812fd7e98
 
+in  upstream 
   with node-readline-aff =
-      { dependencies =
-          [ "aff"
-          , "console"
-          , "effect"
-          , "either"
-          , "node-readline"
-          , "prelude"
-          , "psci-support"
-          , "strings"
-          ]
-      , repo =
-          "https://github.com/ntwilson/purescript-node-readline-aff"
-      , version =
-          "master"
-      }
-
-in  upstream
+    { dependencies =
+      [ "aff"
+      , "console"
+      , "effect"
+      , "either"
+      , "node-readline"
+      , "prelude"
+      , "psci-support"
+      , "strings"
+      ]
+    , repo = "https://github.com/ntwilson/purescript-node-readline-aff"
+    , version = "master"
+    }
+  with option =
+    { dependencies =
+      [ "aff"
+      , "argonaut-codecs"
+      , "argonaut-core"
+      , "codec"
+      , "codec-argonaut"
+      , "datetime"
+      , "effect"
+      , "either"
+      , "enums"
+      , "foldable-traversable"
+      , "foreign"
+      , "foreign-object"
+      , "identity"
+      , "lists"
+      , "maybe"
+      , "prelude"
+      , "profunctor"
+      , "record"
+      , "simple-json"
+      , "strings"
+      , "transformers"
+      , "tuples"
+      , "unsafe-coerce"
+      ]
+    , repo = "https://github.com/ntwilson/purescript-option"
+    , version = "main"
+    }
+  with concur-react =
+    { repo = "https://github.com/purescript-concur/purescript-concur-react"
+    , version = "v0.5.0"
+    , dependencies =
+      [ "aff"
+      , "arrays"
+      , "concur-core"
+      , "console"
+      , "effect"
+      , "either"
+      , "exceptions"
+      , "maybe"
+      , "prelude"
+      , "react"
+      , "react-dom"
+      , "transformers"
+      , "tuples"
+      , "unsafe-coerce"
+      , "web-dom"
+      , "web-events"
+      , "web-html"
+      ]
+    }
+  with concur-core =
+    { dependencies =
+      [ "aff"
+      , "aff-bus"
+      , "arrays"
+      , "avar"
+      , "console"
+      , "control"
+      , "datetime"
+      , "effect"
+      , "either"
+      , "exceptions"
+      , "foldable-traversable"
+      , "free"
+      , "identity"
+      , "lazy"
+      , "maybe"
+      , "newtype"
+      , "parallel"
+      , "prelude"
+      , "profunctor-lenses"
+      , "tailrec"
+      , "transformers"
+      , "tuples"
+      ]
+    , repo = "https://github.com/purescript-concur/purescript-concur-core"
+    , version = "v0.5.0"
+    }
