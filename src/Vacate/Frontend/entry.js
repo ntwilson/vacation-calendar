@@ -1,3 +1,3 @@
-var Main = require('../../../output/Vacate.Frontend.Main/index.js');
+import { main } from '../../../output/Vacate.Frontend.Main/index.js';
 
-Main.main();
+main();
