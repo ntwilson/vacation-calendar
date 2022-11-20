@@ -1,5 +1,6 @@
 import { Button, Slider, TextField } from '@mui/material';
-import { DatePicker, AdapterDateFns, LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DataGrid } from '@mui/x-data-grid';
 
 export const rawButton = Button;
