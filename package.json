@@ -13,10 +13,9 @@
     "watch-ps": "spago build --watch --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "test": "spago test --purs-args \"--stash --censor-lib --censor-codes=ImplicitQualifiedImportReExport\"",
     "clean": "rm -r output/Vacate*",
-    "build": "npm run ps && webpack && spago bundle-app -m Vacate.Backend.Main -t release/index.js",
+    "build": "npm run ps && webpack && webpack -t node -c webpack.backend.config",
     "watch": "npm run ps && webpack -w",
-    "format": "purs-tidy format-in-place src/",
-    "start-db-server": "sudo service postgresql start"
+    "format": "purs-tidy format-in-place src/"
   },
   "repository": {
     "type": "git",
